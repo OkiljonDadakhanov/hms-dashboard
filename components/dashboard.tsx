@@ -48,29 +48,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientForm } from "./patient-form";
 
-// Define a type for your patient data
-type Patient = {
-  id: number;
-  name: string;
-  avatar: string;
-  initials: string;
-  age: number;
-  gender: string;
-  bloodGroup: string;
-  phone: string;
-  email: string;
-  hasAvatar: boolean;
-};
-
-// Type for new patient data coming from the form
-type NewPatientData = Omit<Patient, "id" | "hasAvatar" | "initials">;
+import akilhan from "@/public/avatars/akilhan.jpg";
+import cat from "@/public/avatars/cat.jpg";
 
 // Sample patient data
-const initialPatients: Patient[] = [
+const initialPatients = [
   {
     id: 1,
     name: "Elizabeth Polson",
-    avatar: "/placeholder.svg?height=40&width=40",
+    avatar: akilhan,
     initials: "EP",
     age: 32,
     gender: "Female",
@@ -82,7 +68,7 @@ const initialPatients: Patient[] = [
   {
     id: 2,
     name: "John David",
-    avatar: "",
+    avatar: cat,
     initials: "JD",
     age: 28,
     gender: "Male",
@@ -94,19 +80,19 @@ const initialPatients: Patient[] = [
   {
     id: 3,
     name: "Krishtav Rajan",
-    avatar: "",
+    avatar: akilhan,
     initials: "KR",
     age: 24,
     gender: "Male",
     bloodGroup: "AB-ve",
     phone: "+91 12345 67890",
     email: "krishnavrajan23@gmail.com",
-    hasAvatar: false,
+    hasAvatar: true,
   },
   {
     id: 4,
     name: "Sumanth Tinson",
-    avatar: "/placeholder.svg?height=40&width=40",
+    avatar: cat,
     initials: "ST",
     age: 26,
     gender: "Male",
@@ -118,7 +104,7 @@ const initialPatients: Patient[] = [
   {
     id: 5,
     name: "EG Subramani",
-    avatar: "/placeholder.svg?height=40&width=40",
+    avatar: akilhan,
     initials: "ES",
     age: 77,
     gender: "Male",
@@ -137,7 +123,7 @@ const initialPatients: Patient[] = [
     bloodGroup: "O+ve",
     phone: "+91 12345 67890",
     email: "ranjanmaari@yahoo.com",
-    hasAvatar: true,
+    hasAvatar: false,
   },
   {
     id: 7,
@@ -149,7 +135,7 @@ const initialPatients: Patient[] = [
     bloodGroup: "O-ve",
     phone: "+91 12345 67890",
     email: "gopai22@gmail.com",
-    hasAvatar: true,
+    hasAvatar: false,
   },
   {
     id: 8,
@@ -214,18 +200,18 @@ const initialPatients: Patient[] = [
 ];
 
 export default function Dashboard() {
-  const [patients, setPatients] = useState<Patient[]>(initialPatients);
+  const [patients, setPatients] = useState(initialPatients);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof Patient;
+    key: string;
     direction: "ascending" | "descending";
   } | null>(null);
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
   const patientsPerPage = 7;
 
   // Handle sorting
-  const requestSort = (key: keyof Patient) => {
+  const requestSort = (key: string) => {
     let direction: "ascending" | "descending" = "ascending";
     if (
       sortConfig &&
@@ -247,9 +233,11 @@ export default function Dashboard() {
 
   if (sortConfig !== null) {
     sortedPatients.sort((a, b) => {
+      // @ts-expect-error - We know these keys exist on our patient objects
       if (a[sortConfig.key] < b[sortConfig.key]) {
         return sortConfig.direction === "ascending" ? -1 : 1;
       }
+      // @ts-expect-error - We know these keys exist on our patient objects
       if (a[sortConfig.key] > b[sortConfig.key]) {
         return sortConfig.direction === "ascending" ? 1 : -1;
       }
@@ -272,15 +260,16 @@ export default function Dashboard() {
   };
 
   // Handle adding a new patient
-  const handleAddPatient = (newPatient: NewPatientData) => {
+  const handleAddPatient = (newPatient: unknown) => {
     const id =
       patients.length > 0 ? Math.max(...patients.map((p) => p.id)) + 1 : 1;
+    const hasAvatar = !!newPatient.avatar;
     setPatients([
       ...patients,
       {
         ...newPatient,
         id,
-        hasAvatar: false,
+        hasAvatar,
         initials: newPatient.name
           .split(" ")
           .map((n: string) => n[0])
@@ -291,7 +280,7 @@ export default function Dashboard() {
   };
 
   // Get sort direction icon
-  const getSortDirectionIcon = (key: keyof Patient) => {
+  const getSortDirectionIcon = (key: string) => {
     if (!sortConfig || sortConfig.key !== key) {
       return <ChevronDown className="ml-1 h-4 w-4" />;
     }
@@ -575,11 +564,11 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2">
                             {patient.hasAvatar ? (
                               <Image
-                                src={patient.avatar || "/placeholder.svg"}
+                                src={patient.avatar}
                                 alt={patient.name}
                                 width={40}
                                 height={40}
-                                className="rounded-full"
+                                className="rounded-full object-cover h-10 w-10"
                               />
                             ) : (
                               <div
@@ -658,13 +647,11 @@ export default function Dashboard() {
                                   <div className="flex items-center gap-4">
                                     {patient.hasAvatar ? (
                                       <Image
-                                        src={
-                                          patient.avatar || "/placeholder.svg"
-                                        }
+                                        src={patient.avatar}
                                         alt={patient.name}
                                         width={60}
                                         height={60}
-                                        className="rounded-full"
+                                        className="rounded-full object-cover h-16 w-16"
                                       />
                                     ) : (
                                       <div

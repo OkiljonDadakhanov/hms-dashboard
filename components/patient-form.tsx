@@ -1,5 +1,8 @@
 "use client";
 
+import type React from "react";
+import Image from "next/image";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { User } from "lucide-react";
 
 interface PatientFormProps {
-  onSubmit: (data: unknown) => void;
+  onSubmit: (data: any) => void;
 }
 
 export function PatientForm({ onSubmit }: PatientFormProps) {
@@ -24,7 +28,10 @@ export function PatientForm({ onSubmit }: PatientFormProps) {
     bloodGroup: "",
     phone: "",
     email: "",
+    avatar: "",
   });
+
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -45,6 +52,39 @@ export function PatientForm({ onSubmit }: PatientFormProps) {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({
+        ...prev,
+        avatar: "Image size should be less than 5MB",
+      }));
+      return;
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      setErrors((prev) => ({ ...prev, avatar: "Please upload an image file" }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setImagePreview(base64String);
+      setFormData((prev) => ({ ...prev, avatar: base64String }));
+
+      // Clear error if exists
+      if (errors.avatar) {
+        setErrors((prev) => ({ ...prev, avatar: "" }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const validateForm = () => {
@@ -186,6 +226,52 @@ export function PatientForm({ onSubmit }: PatientFormProps) {
           {errors.email && (
             <p className="text-xs text-red-500">{errors.email}</p>
           )}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <Label htmlFor="avatar">Patient Photo</Label>
+        <div className="mt-2 flex items-center gap-4">
+          {imagePreview ? (
+            <div className="relative">
+              <Image
+                src={imagePreview || "/placeholder.svg"}
+                alt="Preview"
+                className="w-24 h-24 rounded-full object-cover border"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                onClick={() => {
+                  setImagePreview(null);
+                  setFormData((prev) => ({ ...prev, avatar: "" }));
+                }}
+              >
+                ×
+              </Button>
+            </div>
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border">
+              <User className="h-12 w-12 text-gray-300" />
+            </div>
+          )}
+          <div className="flex-1">
+            <Input
+              id="avatar"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className={errors.avatar ? "border-red-500" : ""}
+            />
+            {errors.avatar && (
+              <p className="text-xs text-red-500 mt-1">{errors.avatar}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Upload a profile picture for the patient. Max size: 5MB.
+            </p>
+          </div>
         </div>
       </div>
 
